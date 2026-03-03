@@ -237,7 +237,8 @@ playerNameInput.addEventListener('input',function(){var v=this.value.replace(/[^
 
 // ─── WebSocket Signaling + WebRTC ───
 var pc=null,dc=null,sendInterval=null,sigWs=null;
-var wsUrl=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';
+var basePath=location.pathname.endsWith('/')?location.pathname.slice(0,-1):location.pathname.split('/').slice(0,-1).join('/');
+var wsUrl=(location.protocol==='https:'?'wss://':'ws://')+location.host+basePath+'/ws';
 
 function createPC(){
   pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
@@ -344,7 +345,7 @@ function cleanupPeer(){
 // ─── Scoreboard ───
 function loadScoreboard(mode){
   sbBody.innerHTML='';sbEmpty.classList.add('hidden');
-  fetch('/api/scores?mode='+(mode||'all')+'&limit=50').then(function(r){return r.json();}).then(function(rows){
+  fetch(basePath+'/api/scores?mode='+(mode||'all')+'&limit=50').then(function(r){return r.json();}).then(function(rows){
     if(!rows.length){sbEmpty.classList.remove('hidden');return;}
     rows.forEach(function(r){
       var tr=document.createElement('tr');tr.className=r.result;
@@ -370,7 +371,7 @@ function submitScore(result){
     timeMs:elapsed,
     hullPercent:Math.max(0,localPlayer?localPlayer.health:0)
   };
-  fetch('/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  fetch(basePath+'/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){return r.json();})
     .then(function(data){
       if(data.rank){
