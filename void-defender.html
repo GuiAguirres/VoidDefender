@@ -184,7 +184,7 @@ var pc=null,dc=null,sendInterval=null;
 function createPC(){pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});pc.oniceconnectionstatechange=function(){if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'){showCS('Peer disconnected!','#f44');peerConnected=false;}};}
 function setupDC(ch){dc=ch;dc.onopen=function(){peerConnected=true;showCS('Connected! Launching...','#0f0');setTimeout(function(){hostLobby.classList.add('hidden');joinLobby.classList.add('hidden');doReset(true);},800);};dc.onclose=function(){peerConnected=false;};dc.onmessage=function(e){handleMsg(e.data);};}
 function sendP(o){if(dc&&dc.readyState==='open')try{dc.send(JSON.stringify(o));}catch(e){}}
-function handleMsg(raw){try{var m=JSON.parse(raw);if(m.type==='state'){remotePlayerData={x:m.x,y:m.y,health:m.health,alive:m.alive};}if(m.type==='bullet')remoteBullets.push({x:m.x,y:m.y,width:3,height:14,speed:14,markedForDeletion:false});if(m.type==='kill'){score=m.score;updateHUD();checkWT();checkWin();}if(m.type==='gameover'&&gameState==='PLAYING'){gameState='GAME_OVER';endGame('Ally ship destroyed. Mission failed.');}}catch(e){}}
+function handleMsg(raw){try{var m=JSON.parse(raw);if(m.type==='state'){remotePlayerData={x:m.x*canvas.width,y:m.y*canvas.height,health:m.health,alive:m.alive};}if(m.type==='bullet')remoteBullets.push(new Bullet(m.x*canvas.width,m.y*canvas.height));if(m.type==='kill'){score=m.score;updateHUD();checkWT();checkWin();}if(m.type==='gameover'&&gameState==='PLAYING'){gameState='GAME_OVER';endGame('Ally ship destroyed. Mission failed.');}}catch(e){}}
 function showCS(t,c){connectionStatusEl.textContent=t;connectionStatusEl.style.color=c||'#0f0';connectionStatusEl.style.opacity='1';setTimeout(function(){connectionStatusEl.style.opacity='0';},3000);}
 function compress(s){return btoa(JSON.stringify(s));}function decompress(s){try{return JSON.parse(atob(s.trim()));}catch(e){return null;}}
 function doHostFlow(){startScreen.classList.add('hidden');hostLobby.classList.remove('hidden');document.getElementById('hostOffer').value='';document.getElementById('hostAnswer').value='';document.getElementById('hostStatus').textContent='Generating invite code...';isHost=true;isMultiplayer=true;createPC();var ch=pc.createDataChannel('game');setupDC(ch);pc.createOffer().then(function(o){return pc.setLocalDescription(o);}).then(function(){return new Promise(function(r){if(pc.iceGatheringState==='complete'){r();return;}var f=function(){if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',f);r();}};pc.addEventListener('icegatheringstatechange',f);setTimeout(r,5000);});}).then(function(){document.getElementById('hostOffer').value=compress(pc.localDescription);document.getElementById('hostStatus').textContent='Code ready! Copy and send to friend.';});}
@@ -237,7 +237,7 @@ Player.prototype.update=function(){
     if(this.dualShotTimer>0){this.dualShotTimer--;if(this.dualShotTimer<=0)this.dualShot=false;}
     if(this.shieldTimer>0){this.shieldTimer--;if(this.shieldTimer<=0)this.shieldActive=false;}
 };
-Player.prototype.shoot=function(){var now=Date.now();if(now-this.lastShot>this.fireRate){var cx=this.x+this.width/2;if(this.dualShot){bullets.push(new Bullet(cx-8,this.y));bullets.push(new Bullet(cx+4,this.y));sendP({type:'bullet',x:cx-8,y:this.y});sendP({type:'bullet',x:cx+4,y:this.y});}else{bullets.push(new Bullet(cx-2,this.y));sendP({type:'bullet',x:cx-2,y:this.y});}this.lastShot=now;}};
+Player.prototype.shoot=function(){var now=Date.now();if(now-this.lastShot>this.fireRate){var cx=this.x+this.width/2;if(this.dualShot){bullets.push(new Bullet(cx-8,this.y));bullets.push(new Bullet(cx+4,this.y));sendP({type:'bullet',x:(cx-8)/canvas.width,y:this.y/canvas.height});sendP({type:'bullet',x:(cx+4)/canvas.width,y:this.y/canvas.height});}else{bullets.push(new Bullet(cx-2,this.y));sendP({type:'bullet',x:(cx-2)/canvas.width,y:this.y/canvas.height});}this.lastShot=now;}};
 Player.prototype.takeDamage=function(amt){
     if(!this.alive)return;
     if(this.shieldActive){this.shieldActive=false;this.shieldTimer=0;showPU('SHIELD ABSORBED!');return;}
@@ -463,7 +463,7 @@ function doReset(mp){
     initBG();updateHUD();showWave(WAVES[0].name);
     if(animationId)cancelAnimationFrame(animationId);
     if(sendInterval)clearInterval(sendInterval);
-    if(isMultiplayer){sendInterval=setInterval(function(){sendP({type:'state',x:localPlayer.x,y:localPlayer.y,health:localPlayer.health,alive:localPlayer.alive});},50);}
+    if(isMultiplayer){sendInterval=setInterval(function(){sendP({type:'state',x:localPlayer.x/canvas.width,y:localPlayer.y/canvas.height,health:localPlayer.health,alive:localPlayer.alive});},50);}
     gameLoop();
 }
 
