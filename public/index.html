@@ -260,7 +260,7 @@ function setupDC(ch){
   dc.onmessage=function(e){handleMsg(e.data);};
 }
 function sendP(o){if(dc&&dc.readyState==='open')try{dc.send(JSON.stringify(o));}catch(e){}}
-function handleMsg(raw){try{var m=JSON.parse(raw);if(m.type==='state'){remotePlayerData={x:m.x,y:m.y,health:m.health,alive:m.alive};}if(m.type==='bullet')remoteBullets.push({x:m.x,y:m.y,width:3,height:14,speed:14,markedForDeletion:false});if(m.type==='kill'){score=m.score;updateHUD();checkWT();checkWin();}if(m.type==='gameover'&&gameState==='PLAYING'){gameState='GAME_OVER';endGame('Ally ship destroyed. Mission failed.');}if(m.type==='name'){partnerName=m.name||null;}}catch(e){}}
+function handleMsg(raw){try{var m=JSON.parse(raw);if(m.type==='state'){remotePlayerData={x:m.x,y:m.y,health:m.health,alive:m.alive};}if(m.type==='bullet')remoteBullets.push(new Bullet(m.x,m.y));if(m.type==='kill'){score=m.score;updateHUD();checkWT();checkWin();}if(m.type==='gameover'&&gameState==='PLAYING'){gameState='GAME_OVER';endGame('Ally ship destroyed. Mission failed.');}if(m.type==='name'){partnerName=m.name||null;}}catch(e){}}
 function showCS(t,c){connectionStatusEl.textContent=t;connectionStatusEl.style.color=c||'#0f0';connectionStatusEl.style.opacity='1';setTimeout(function(){connectionStatusEl.style.opacity='0';},3000);}
 
 function connectSignaling(cb){
